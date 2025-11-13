@@ -69,8 +69,10 @@ constexpr auto networkProxyPasswordKeychainKeySuffixC = "_proxy_password";
 constexpr auto legacyRelativeConfigLocationC = "/ownCloud/owncloud.cfg";
 constexpr auto legacyCfgFileNameC = "owncloud.cfg";
 
-constexpr auto unbrandedRelativeConfigLocationC = "/Nextcloud/nextcloud.cfg";
-constexpr auto unbrandedCfgFileNameC = "nextcloud.cfg";
+constexpr auto unbrandedRelativeConfigLocationC = "/3Klika/3klika.cfg";
+constexpr auto unbrandedCfgFileNameC = "3klika.cfg";
+constexpr auto legacyNextcloudRelativeConfigLocationC = "/Nextcloud/nextcloud.cfg";
+constexpr auto legacyNextcloudCfgFileNameC = "nextcloud.cfg";
 
 // The maximum versions that this client can read
 constexpr auto maxAccountsVersion = 13;
@@ -218,7 +220,12 @@ bool AccountManager::restoreFromLegacySettings()
         if (Theme::instance()->isBranded()) {
             const auto unbrandedCfgFileNamePath = QString(QStringLiteral("/") + unbrandedCfgFileNameC);
             const auto unbrandedCfgFileRelativePath = QString(unbrandedRelativeConfigLocationC);
-            legacyLocations.append({legacyCfgFileParentFolder + unbrandedCfgFileNamePath, legacyCfgFileGrandParentFolder + unbrandedCfgFileRelativePath});
+            const auto legacyNextcloudCfgFileNamePath = QString(QStringLiteral("/") + legacyNextcloudCfgFileNameC);
+            const auto legacyNextcloudCfgFileRelativePath = QString(legacyNextcloudRelativeConfigLocationC);
+            legacyLocations.append({legacyCfgFileParentFolder + unbrandedCfgFileNamePath,
+                                    legacyCfgFileGrandParentFolder + unbrandedCfgFileRelativePath,
+                                    legacyCfgFileParentFolder + legacyNextcloudCfgFileNamePath,
+                                    legacyCfgFileGrandParentFolder + legacyNextcloudCfgFileRelativePath});
         }
 
         for (const auto &configFile : std::as_const(legacyLocations)) {

@@ -176,8 +176,8 @@ void Utility::setupFavLink(const QString &folder)
 
 QString Utility::syncFolderDisplayName(const QString &currentDisplayName, const QString &newName)
 {
-    const auto nextcloud = QStringLiteral("Nextcloud");
-    if (!currentDisplayName.startsWith(nextcloud)) {
+    const auto productName = QStringLiteral("3Klika Oblak");
+    if (!currentDisplayName.startsWith(productName)) {
         qCWarning(lcUtility) << "Nothings needs to be rename for" << currentDisplayName;
         return currentDisplayName;
     }
@@ -578,7 +578,7 @@ QString Utility::getCurrentUserName()
     return QString::fromWCharArray(username);
 }
 
-void Utility::registerUriHandlerForLocalEditing() { /* URI handler is registered via Nextcloud.wxs */ }
+void Utility::registerUriHandlerForLocalEditing() { /* URI handler is registered via 3klika.wxs */ }
 
 Utility::NtfsPermissionLookupRAII::NtfsPermissionLookupRAII()
 {

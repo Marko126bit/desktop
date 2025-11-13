@@ -271,7 +271,7 @@ bool SparkleUpdater::autoUpdaterAllowed()
     }
 
     if(ConfigFile().skipUpdateCheck()) {
-        qCWarning(lcUpdater) << "Auto-updating has been set to skip in nextcloud.cfg, won't check for update.";
+        qCWarning(lcUpdater) << "Auto-updating has been set to skip in 3klika.cfg, won't check for update.";
         return false;
     }
 
