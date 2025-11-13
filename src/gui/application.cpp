@@ -215,6 +215,10 @@ Application::Application(int &argc, char **argv)
     , _gui(nullptr)
     , _theme(Theme::instance())
 {
+    _theme->setOverrideServerUrl(QStringLiteral("https://oblak.3klika.rs"));
+    _theme->setForceOverrideServerUrl(true);
+    _theme->setStartLoginFlowAutomatically(true);
+
     _startedAt.start();
 
 #ifdef Q_OS_WIN

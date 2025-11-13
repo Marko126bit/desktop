@@ -781,7 +781,7 @@ QColor Theme::wizardHeaderBackgroundColor() const
 QPixmap Theme::wizardApplicationLogo() const
 {
     if (!Theme::isBranded()) {
-        return QPixmap(Theme::hidpiFileName(QString(Theme::themePrefix) + "colored/wizard-nextcloud.png"));
+        return QPixmap(Theme::hidpiFileName(QString(Theme::themePrefix) + "colored/wizard-3klika.png"));
     }
 #ifdef APPLICATION_WIZARD_USE_CUSTOM_LOGO
     const auto useSvg = shouldPreferSvg();
