@@ -8,7 +8,16 @@
 #include <QtCore/qglobal.h>
 
 #include <openssl/evp.h>
+
+#ifndef _WIN32
 #include <libp11.h>
+#else
+struct PKCS11_CTX;
+struct PKCS11_SLOT;
+struct PKCS11_TOKEN;
+struct PKCS11_CERT;
+struct PKCS11_KEY;
+#endif
 
 namespace OCC
 {

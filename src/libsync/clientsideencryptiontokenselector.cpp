@@ -17,7 +17,9 @@
 #include <wincrypt.h>
 #endif
 
+#ifndef _WIN32
 #include <libp11.h>
+#endif
 
 #include <openssl/pem.h>
 
@@ -88,6 +90,7 @@ void ClientSideEncryptionTokenSelector::setSha256Fingerprint(const QByteArray &s
 
 void ClientSideEncryptionTokenSelector::discoverCertificates(const AccountPtr &account)
 {
+#ifndef _WIN32
     auto ctx = Pkcs11Context{Pkcs11Context::State::CreateContext};
 
     auto rc = PKCS11_CTX_load(ctx, account->encryptionHardwareTokenDriverPath().toLatin1().constData());
@@ -217,6 +220,9 @@ void ClientSideEncryptionTokenSelector::discoverCertificates(const AccountPtr &a
     }
 
     processDiscoveredCertificates();
+#else
+    Q_UNUSED(account);
+#endif
 }
 
 void ClientSideEncryptionTokenSelector::processDiscoveredCertificates()

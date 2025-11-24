@@ -1119,6 +1119,7 @@ void ClientSideEncryption::addExtraRootCertificates()
 
 void ClientSideEncryption::initializeHardwareTokenEncryption(QWidget *settingsDialog)
 {
+#ifndef _WIN32
     auto ctx = Pkcs11Context{Pkcs11Context::State::CreateContext};
     _tokenSlots.reset();
     _encryptionCertificate.clear();
@@ -1315,6 +1316,10 @@ void ClientSideEncryption::initializeHardwareTokenEncryption(QWidget *settingsDi
     }
 
     failedToInitialize();
+#else
+    Q_UNUSED(settingsDialog);
+    failedToInitialize();
+#endif
 }
 
 void ClientSideEncryption::fetchCertificateFromKeyChain()

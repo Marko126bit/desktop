@@ -71,9 +71,14 @@ PKey PKey::readPublicKey(Bio &bio)
 
 PKey PKey::readHardwarePublicKey(PKCS11_KEY *key)
 {
+#ifndef _WIN32
     PKey result;
     result._pkey = PKCS11_get_public_key(key);
     return result;
+#else
+    Q_UNUSED(key);
+    return {};
+#endif
 }
 
 PKey PKey::readPrivateKey(Bio &bio)
@@ -85,9 +90,14 @@ PKey PKey::readPrivateKey(Bio &bio)
 
 PKey PKey::readHardwarePrivateKey(PKCS11_KEY *key)
 {
+#ifndef _WIN32
     PKey result;
     result._pkey = PKCS11_get_private_key(key);
     return result;
+#else
+    Q_UNUSED(key);
+    return {};
+#endif
 }
 
 PKey PKey::generate(PKeyCtx &ctx)
@@ -109,6 +119,7 @@ PKey::operator EVP_PKEY *() const
     return _pkey;
 }
 
+#ifndef _WIN32
 Pkcs11Context::Pkcs11Context(State initState)
     : _pkcsS11Ctx(initState == State::CreateContext ? PKCS11_CTX_new() : nullptr)
 {
@@ -148,5 +159,28 @@ void Pkcs11Context::clear()
         _pkcsS11Ctx = nullptr;
     }
 }
+#else
+Pkcs11Context::Pkcs11Context(State initState)
+{
+    Q_UNUSED(initState);
+}
+
+Pkcs11Context::Pkcs11Context(Pkcs11Context &&otherContext)
+{
+    Q_UNUSED(otherContext);
+}
+
+Pkcs11Context::~Pkcs11Context() = default;
+
+Pkcs11Context &Pkcs11Context::operator=(Pkcs11Context &&otherContext)
+{
+    Q_UNUSED(otherContext);
+    return *this;
+}
+
+void Pkcs11Context::clear()
+{
+}
+#endif
 
 }
