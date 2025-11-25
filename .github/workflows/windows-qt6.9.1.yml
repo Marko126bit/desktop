@@ -86,10 +86,11 @@ jobs:
             -DWITH_CRASHREPORTER=OFF ^
             -DBUILD_SHELL_INTEGRATION=OFF ^
             -DQT_INSTALL_PREFIX=C:\Qt\6.9.1\msvc2022_64 ^
-            -DCMAKE_PREFIX_PATH=C:\Qt\6.9.1\msvc2022_64 ^
+            -DCMAKE_PREFIX_PATH="C:\Qt\6.9.1\msvc2022_64;C:\vcpkg\installed\x64-windows" ^
             -DVCPKG_TARGET_TRIPLET=x64-windows ^
             -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake ^
             ..
+
 
       - name: Build
         shell: cmd
