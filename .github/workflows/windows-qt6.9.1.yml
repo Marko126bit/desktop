@@ -37,17 +37,17 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force -Path "C:\fake-libp11\lib\pkgconfig" | Out-Null
           Set-Content -Path "C:\fake-libp11\lib\pkgconfig\libp11.pc" -Value @"
-prefix=C:/fake-libp11
-exec_prefix=${prefix}
-libdir=${prefix}/lib
-includedir=${prefix}/include
-
-Name: libp11
-Description: Fake libp11 for Windows build
-Version: 1.0
-Libs:
-Cflags:
-"@
+          prefix=C:/fake-libp11
+          exec_prefix=${prefix}
+          libdir=${prefix}/lib
+          includedir=${prefix}/include
+          
+          Name: libp11
+          Description: Fake libp11 for Windows build
+          Version: 1.0
+          Libs:
+          Cflags:
+          "@
 
       - name: Add fake libp11 to PKG_CONFIG_PATH
         shell: powershell
@@ -97,3 +97,4 @@ Cflags:
         with:
           name: nextcloud-3klika-qt6.9.1
           path: build/**/*.exe
+
