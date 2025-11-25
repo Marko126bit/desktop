@@ -16,12 +16,10 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install aqtinstall
 
-      # Core Qt – uključuje qtbase, qtdeclarative, qttools, qtsvg, itd.
       - name: Install Qt 6.9.1 (core)
         run: |
           python -m aqt install-qt windows desktop 6.9.1 win64_msvc2022_64 -O C:\Qt
 
-      # Dodatni Qt moduli (add-on)
       - name: Install Qt extra modules
         run: |
           python -m aqt install-qt windows desktop 6.9.1 win64_msvc2022_64 -O C:\Qt -m qtwebengine qtwebsockets qtwebchannel qt5compat qtnetworkauth
@@ -34,7 +32,7 @@ jobs:
         shell: powershell
         run: choco install pkgconfiglite -y
 
-      # libp11 workaround
+      # FAKE libp11 – zaobilaženje svih pkg_check_modules(libp11 ...)
       - name: Create fake libp11
         shell: powershell
         run: |
@@ -44,7 +42,6 @@ jobs:
           exec_prefix=${prefix}
           libdir=${prefix}/lib
           includedir=${prefix}/include
-          
           Name: libp11
           Description: Fake libp11 for Windows build
           Version: 1.0
@@ -57,7 +54,6 @@ jobs:
         run: |
           echo "PKG_CONFIG_PATH=C:\fake-libp11\lib\pkgconfig" | Out-File -FilePath $env:GITHUB_ENV -Append
 
-      # vcpkg samo za OpenSSL, zlib, sqlite, ECM (BEZ qtkeychain)
       - name: Setup vcpkg
         shell: powershell
         run: |
@@ -66,29 +62,17 @@ jobs:
           }
           C:\vcpkg\bootstrap-vcpkg.bat
 
-          C:\vcpkg\vcpkg.exe install openssl:x64-windows zlib:x64-windows sqlite3:x64-windows ecm:x64-windows
+          C:\vcpkg\vcpkg.exe install ^
+              openssl:x64-windows ^
+              zlib:x64-windows ^
+              sqlite3:x64-windows ^
+              ecm:x64-windows ^
+              qtkeychain:x64-windows
 
-      - name: Setup MSVC environment
+      - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
-
-      # >>> Build QtKeychain sa Qt 6.9.1 (bez vcpkg Qt5 sranja)
-      - name: Build QtKeychain (Qt 6.9.1)
-        shell: cmd
-        run: |
-          git clone https://github.com/frankosterfeld/qtkeychain.git C:\qtkeychain
-          mkdir C:\qtkeychain-build
-          cd C:\qtkeychain-build
-          cmake -G "Ninja" ^
-            -DCMAKE_BUILD_TYPE=Release ^
-            -DCMAKE_PREFIX_PATH=C:\Qt\6.9.1\msvc2022_64 ^
-            -DQTKEYCHAIN_STATIC=OFF ^
-            -DQTKEYCHAIN_BUILD_TRANSLATIONS=OFF ^
-            -DCMAKE_INSTALL_PREFIX=C:\deps\qtkeychain ^
-            C:\qtkeychain
-          cmake --build . --config Release
-          cmake --install . --config Release
 
       - name: Configure (CMake)
         shell: cmd
@@ -102,9 +86,9 @@ jobs:
             -DWITH_CRASHREPORTER=OFF ^
             -DBUILD_SHELL_INTEGRATION=OFF ^
             -DQT_INSTALL_PREFIX=C:\Qt\6.9.1\msvc2022_64 ^
-            -DCMAKE_PREFIX_PATH="C:\Qt\6.9.1\msvc2022_64;C:\deps\qtkeychain;C:\vcpkg\installed\x64-windows" ^
-            -DVCPKG_TARGET_TRIPLET=x64-windows ^
+            -DCMAKE_PREFIX_PATH="C:\Qt\6.9.1\msvc2022_64;C:\vcpkg\installed\x64-windows" ^
             -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake ^
+            -DVCPKG_TARGET_TRIPLET=x64-windows ^
             ..
 
       - name: Build
@@ -118,3 +102,4 @@ jobs:
         with:
           name: nextcloud-3klika-qt6.9.1
           path: build/**/*.exe
+
