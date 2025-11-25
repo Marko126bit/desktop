@@ -8,59 +8,52 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      # 1) Checkout source
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      # 2) aqtinstall
       - name: Install aqtinstall
         run: |
           python -m pip install --upgrade pip
           python -m pip install aqtinstall
 
-      # 3) Install Qt 6.9.1 (MSVC2022)
-      - name: Install Qt 6.9.1 (MSVC 2022)
+      - name: Install Qt 6.9.1 (core)
         run: |
           python -m aqt install-qt windows desktop 6.9.1 win64_msvc2022_64 -O C:\Qt
 
-      # 4) Install Ninja
+      - name: Install Qt modules
+        run: |
+          python -m aqt install-qt windows desktop 6.9.1 win64_msvc2022_64 -O C:\Qt -m qtbase qtwebengine qtdeclarative qttools qtsvg qtwebsockets qtwebchannel qt5compat qtwebview qtshadertools qtquickcontrols2 qtnetworkauth
+
       - name: Install Ninja
         shell: powershell
-        run: |
-          choco install ninja -y
+        run: choco install ninja -y
 
-      # 5) Install pkg-config (za pkg_check_modules)
       - name: Install pkg-config
         shell: powershell
-        run: |
-          choco install pkgconfiglite -y
+        run: choco install pkgconfiglite -y
 
-      # 6) FAKE libp11 (.pc fajl) – da pkg_check_modules(libp11) ne puca
       - name: Create fake libp11
         shell: powershell
         run: |
           New-Item -ItemType Directory -Force -Path "C:\fake-libp11\lib\pkgconfig" | Out-Null
           Set-Content -Path "C:\fake-libp11\lib\pkgconfig\libp11.pc" -Value @"
-          prefix=C:/fake-libp11
-          exec_prefix=${prefix}
-          libdir=${prefix}/lib
-          includedir=${prefix}/include
-          
-          Name: libp11
-          Description: Fake libp11 for Windows build
-          Version: 1.0
-          Libs:
-          Cflags:
-          "@
+prefix=C:/fake-libp11
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+includedir=${prefix}/include
 
-      # 7) Dodaj fake libp11 u PKG_CONFIG_PATH
+Name: libp11
+Description: Fake libp11 for Windows build
+Version: 1.0
+Libs:
+Cflags:
+"@
+
       - name: Add fake libp11 to PKG_CONFIG_PATH
         shell: powershell
-        run: |
-          echo "PKG_CONFIG_PATH=C:\fake-libp11\lib\pkgconfig" | Out-File -FilePath $env:GITHUB_ENV -Append
+        run: echo "PKG_CONFIG_PATH=C:\fake-libp11\lib\pkgconfig" | Out-File -FilePath $env:GITHUB_ENV -Append
 
-      # 8) Minimalni vcpkg deps
-      - name: Setup vcpkg and install base deps
+      - name: Setup vcpkg
         shell: powershell
         run: |
           if (!(Test-Path "C:\vcpkg")) {
@@ -68,19 +61,14 @@ jobs:
           }
           C:\vcpkg\bootstrap-vcpkg.bat
 
-          C:\vcpkg\vcpkg.exe install `
-            openssl:x64-windows `
-            zlib:x64-windows `
-            sqlite3:x64-windows `
-            ecm:x64-windows
+          C:\vcpkg\vcpkg.exe install openssl:x64-windows zlib:x64-windows sqlite3:x64-windows ecm:x64-windows
+          C:\vcpkg\vcpkg.exe install qtkeychain:x64-windows
 
-      # 9) MSVC okruženje
       - name: Setup MSVC environment
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
 
-      # 10) CMake configure
       - name: Configure (CMake)
         shell: cmd
         run: |
@@ -88,28 +76,24 @@ jobs:
           cd build
           cmake -G "Ninja" ^
             -DCMAKE_BUILD_TYPE=Release ^
+            -DCMAKE_DISABLE_FIND_PACKAGE_libp11=ON ^
             -DBUILD_UPDATER=OFF ^
             -DWITH_CRASHREPORTER=OFF ^
             -DBUILD_SHELL_INTEGRATION=OFF ^
             -DQT_INSTALL_PREFIX=C:\Qt\6.9.1\msvc2022_64 ^
             -DCMAKE_PREFIX_PATH=C:\Qt\6.9.1\msvc2022_64 ^
             -DVCPKG_TARGET_TRIPLET=x64-windows ^
-            -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake ^
-            -DCMAKE_DISABLE_FIND_PACKAGE_libp11=ON ^
+            -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake ^
             ..
 
-      # 11) Build
       - name: Build
         shell: cmd
         run: |
           cd build
           cmake --build . --config Release
 
-      # 12) Upload EXE artifacts
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: nextcloud-3klika-qt6.9.1
-          path: |
-            build/**/*.exe
-
+          path: build/**/*.exe
