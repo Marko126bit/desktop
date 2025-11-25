@@ -111,4 +111,3 @@ Cflags:
           name: nextcloud-3klika-qt6.9.1
           path: |
             build/**/*.exe
-
