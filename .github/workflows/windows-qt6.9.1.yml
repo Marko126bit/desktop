@@ -1,4 +1,4 @@
-name: 3klika Nextcloud Windows (Qt 6.6.3)
+name: 3klika Nextcloud Windows (Qt from vcpkg)
 
 on:
   workflow_dispatch:
@@ -11,15 +11,6 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Install aqtinstall
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install aqtinstall
-
-      - name: Install Qt 6.6.3 (core + modules)
-        run: |
-          python -m aqt install-qt windows desktop 6.6.3 win64_msvc2022_64 -O C:\Qt -m qtdeclarative qtwebengine qtwebsockets qtwebchannel qtquickwidgets qtquickcontrols2 qt5compat qtnetworkauth qtsvg qttools
-
       - name: Install Ninja
         shell: powershell
         run: choco install ninja -y
@@ -28,6 +19,9 @@ jobs:
         shell: powershell
         run: choco install pkgconfiglite -y
 
+      #################################################
+      # FAKE libp11
+      #################################################
       - name: Create fake libp11
         shell: powershell
         run: |
@@ -49,7 +43,10 @@ jobs:
         run: |
           echo "PKG_CONFIG_PATH=C:\fake-libp11\lib\pkgconfig" | Out-File -FilePath $env:GITHUB_ENV -Append
 
-      - name: Setup vcpkg
+      #################################################
+      # VCPKG – Qt6 + zavisnosti
+      #################################################
+      - name: Setup vcpkg and install dependencies
         shell: powershell
         run: |
           if (!(Test-Path "C:\vcpkg")) {
@@ -59,11 +56,26 @@ jobs:
           C:\vcpkg\bootstrap-vcpkg.bat
 
           $triplet = "x64-windows"
+
           C:\vcpkg\vcpkg.exe install `
             openssl:$triplet `
             zlib:$triplet `
             sqlite3:$triplet `
             ecm:$triplet `
+            qtbase:$triplet `
+            qtdeclarative:$triplet `
+            qttools:$triplet `
+            qtsvg:$triplet `
+            qtwebsockets:$triplet `
+            qtwebchannel:$triplet `
+            qtwebengine:$triplet `
+            qt5compat:$triplet `
+            qtquickcontrols2:$triplet `
+            qtquickwidgets:$triplet `
+            qtnetworkauth:$triplet `
+            kf6-archive:$triplet `
+            kf6-guiaddons:$triplet `
+            cmocka:$triplet `
             qtkeychain-qt6:$triplet
 
       - name: Setup MSVC
@@ -71,6 +83,9 @@ jobs:
         with:
           arch: x64
 
+      #################################################
+      # CONFIGURE CMAKE
+      #################################################
       - name: Configure (CMake)
         shell: cmd
         run: |
@@ -82,10 +97,10 @@ jobs:
             -DBUILD_UPDATER=OFF ^
             -DWITH_CRASHREPORTER=OFF ^
             -DBUILD_SHELL_INTEGRATION=OFF ^
-            -DQT_INSTALL_PREFIX=C:\Qt\6.6.3\msvc2022_64 ^
-            -DCMAKE_PREFIX_PATH="C:\Qt\6.6.3\msvc2022_64;C:\vcpkg\installed\x64-windows" ^
             -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake ^
             -DVCPKG_TARGET_TRIPLET=x64-windows ^
+            -DCMAKE_PREFIX_PATH="C:\vcpkg\installed\x64-windows" ^
+            -DQt6_DIR="C:\vcpkg\installed\x64-windows\share\qt6" ^
             ..
 
       - name: Build
@@ -97,5 +112,6 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: nextcloud-3klika-qt6.6.3
+          name: nextcloud-3klika-qt-vcpkg
           path: build/**/*.exe
+
