@@ -32,7 +32,9 @@ jobs:
         shell: powershell
         run: choco install pkgconfiglite -y
 
-      # FAKE libp11 – zaobilaženje svih pkg_check_modules(libp11 ...)
+      #################################################
+      # FAKE libp11
+      #################################################
       - name: Create fake libp11
         shell: powershell
         run: |
@@ -43,7 +45,7 @@ jobs:
           libdir=${prefix}/lib
           includedir=${prefix}/include
           Name: libp11
-          Description: Fake libp11 for Windows build
+          Description: Fake libp11 for Windows
           Version: 1.0
           Libs:
           Cflags:
@@ -54,7 +56,32 @@ jobs:
         run: |
           echo "PKG_CONFIG_PATH=C:\fake-libp11\lib\pkgconfig" | Out-File -FilePath $env:GITHUB_ENV -Append
 
-      - name: Setup vcpkg (correct old version)
+
+      #################################################
+      # FAKE KF6Archive (KF6ArchiveConfig.cmake)
+      #################################################
+      - name: Create fake KF6Archive
+        shell: powershell
+        run: |
+          $dir = "C:\fake-kf6\cmake"
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          Set-Content -Path "$dir\KF6ArchiveConfig.cmake" -Value @"
+          # Fake KF6Archive module for Windows
+          set(KF6Archive_FOUND TRUE)
+          set(KF6Archive_VERSION "1.0")
+          add_library(KF6::Archive INTERFACE IMPORTED)
+          "@
+
+      - name: Add fake KF6Archive to CMAKE_PREFIX_PATH
+        shell: powershell
+        run: |
+          echo "CMAKE_PREFIX_PATH=C:\fake-kf6" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+
+      #################################################
+      # VCPKG
+      #################################################
+      - name: Setup vcpkg
         shell: powershell
         run: |
           if (!(Test-Path "C:\vcpkg")) {
@@ -63,13 +90,18 @@ jobs:
 
           C:\vcpkg\bootstrap-vcpkg.bat
 
-          C:\vcpkg\vcpkg.exe install openssl:x64-windows zlib:x64-windows sqlite3:x64-windows ecm:x64-windows qtkeychain-qt6:x64-windows
+          C:\vcpkg\vcpkg.exe install openssl:x64-windows zlib:x64-windows sqlite3:x64-windows ecm:x64-windows
+          C:\vcpkg\vcpkg.exe install qtkeychain-qt6:x64-windows
+
 
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
 
+      #################################################
+      # CONFIGURE CMAKE
+      #################################################
       - name: Configure (CMake)
         shell: cmd
         run: |
@@ -78,11 +110,12 @@ jobs:
           cmake -G "Ninja" ^
             -DCMAKE_BUILD_TYPE=Release ^
             -DCMAKE_DISABLE_FIND_PACKAGE_libp11=ON ^
+            -DCMAKE_DISABLE_FIND_PACKAGE_KF6Archive=ON ^
             -DBUILD_UPDATER=OFF ^
             -DWITH_CRASHREPORTER=OFF ^
             -DBUILD_SHELL_INTEGRATION=OFF ^
             -DQT_INSTALL_PREFIX=C:\Qt\6.9.1\msvc2022_64 ^
-            -DCMAKE_PREFIX_PATH="C:\Qt\6.9.1\msvc2022_64;C:\vcpkg\installed\x64-windows" ^
+            -DCMAKE_PREFIX_PATH="C:\Qt\6.9.1\msvc2022_64;C:\vcpkg\installed\x64-windows;C:\fake-kf6" ^
             -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake ^
             -DVCPKG_TARGET_TRIPLET=x64-windows ^
             ..
@@ -98,4 +131,3 @@ jobs:
         with:
           name: nextcloud-3klika-qt6.9.1
           path: build/**/*.exe
-
