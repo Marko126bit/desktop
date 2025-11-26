@@ -17,9 +17,9 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install aqtinstall
 
-      - name: Install Qt 6.9.1 (core)
+      - name: Install Qt 6.9.1 (core + modules)
         run: |
-          python -m aqt install-qt windows desktop 6.9.1 win64_msvc2022_64 -O C:\Qt
+          python -m aqt install-qt windows desktop 6.9.1 win64_msvc2022_64 -O C:\Qt --modules qtbase qtdeclarative qtsvg qttools qt5compat qtquickcontrols2 qtwebsockets
 
       - name: Install Ninja
         shell: powershell
@@ -54,7 +54,7 @@ jobs:
           echo "PKG_CONFIG_PATH=C:\fake-libp11\lib\pkgconfig" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       #################################################
-      # VCPKG – SVE ŠTO SI NABROJAO, sa TAČNIM imenima
+      # VCPKG – samo paketi koji stvarno postoje
       #################################################
       - name: Setup vcpkg and install dependencies
         shell: powershell
@@ -77,7 +77,6 @@ jobs:
             qttools:$triplet `
             qtquickcontrols2:$triplet `
             kf6archive:$triplet `
-            kf6guiaddons:$triplet `
             cmocka:$triplet `
             qtkeychain-qt6:$triplet
 
@@ -87,7 +86,7 @@ jobs:
           arch: x64
 
       #################################################
-      # CONFIGURE CMAKE
+      # CONFIGURE CMAKE – Windows only, bez Linux sranja
       #################################################
       - name: Configure (CMake)
         shell: cmd
@@ -97,9 +96,14 @@ jobs:
           cmake -G "Ninja" ^
             -DCMAKE_BUILD_TYPE=Release ^
             -DCMAKE_DISABLE_FIND_PACKAGE_libp11=ON ^
+            -DCMAKE_DISABLE_FIND_PACKAGE_PkgConfig=ON ^
             -DBUILD_UPDATER=OFF ^
             -DWITH_CRASHREPORTER=OFF ^
             -DBUILD_SHELL_INTEGRATION=OFF ^
+            -DBUILD_TESTING=OFF ^
+            -DWITH_FUSE=OFF ^
+            -DWITH_SYSTEMD=OFF ^
+            -DINSTALL_SYSTEMD=OFF ^
             -DQT_INSTALL_PREFIX=C:\Qt\6.9.1\msvc2022_64 ^
             -DCMAKE_PREFIX_PATH="C:\Qt\6.9.1\msvc2022_64;C:\vcpkg\installed\x64-windows" ^
             -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake ^
