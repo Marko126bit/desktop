@@ -17,9 +17,11 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install aqtinstall
 
+      # >>> OVO JE BITNO: ne tražimo qtbase/qtdeclarative/... kao module
       - name: Install Qt 6.9.1 (core + modules)
         run: |
-          python -m aqt install-qt windows desktop 6.9.1 win64_msvc2022_64 -O C:\Qt --modules qtbase qtdeclarative qtsvg qttools qt5compat qtquickcontrols2 qtwebsockets
+          python -m aqt install-qt windows desktop 6.9.1 win64_msvc2022_64 -O C:\Qt `
+            --modules qtwebengine qtwebsockets qtpdf
 
       - name: Install Ninja
         shell: powershell
@@ -86,7 +88,7 @@ jobs:
           arch: x64
 
       #################################################
-      # CONFIGURE CMAKE – Windows only, bez Linux sranja
+      # CONFIGURE CMAKE – Windows only, bez Linux stvari
       #################################################
       - name: Configure (CMake)
         shell: cmd
