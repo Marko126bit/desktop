@@ -71,7 +71,6 @@ jobs:
             qtwebengine:$triplet `
             qt5compat:$triplet `
             qtquickcontrols2:$triplet `
-            qtquickwidgets:$triplet `
             qtnetworkauth:$triplet `
             kf6-archive:$triplet `
             kf6-guiaddons:$triplet `
@@ -114,4 +113,3 @@ jobs:
         with:
           name: nextcloud-3klika-qt-vcpkg
           path: build/**/*.exe
-
