@@ -22,17 +22,7 @@ jobs:
 
       - name: Install Qt extra modules
         run: |
-          python -m aqt install-qt windows desktop 6.9.1 win64_msvc2022_64 -O C:\Qt -m ^
-            qtdeclarative ^
-            qtwebengine ^
-            qtwebsockets ^
-            qtwebchannel ^
-            qtquickwidgets ^
-            qtquickcontrols2 ^
-            qt5compat ^
-            qtnetworkauth ^
-            qtsvg ^
-            qttools
+          python -m aqt install-qt windows desktop 6.9.1 win64_msvc2022_64 -O C:\Qt -m qtdeclarative qtwebengine qtwebsockets qtwebchannel qtquickwidgets qtquickcontrols2 qt5compat qtnetworkauth qtsvg qttools
 
       - name: Install Ninja
         shell: powershell
@@ -130,5 +120,3 @@ jobs:
         with:
           name: nextcloud-3klika-qt6.9.1
           path: build/**/*.exe
-
-
