@@ -61,13 +61,9 @@ jobs:
             git clone https://github.com/microsoft/vcpkg C:\vcpkg
           }
 
-          # bootstrap classic vcpkg exe (NOT vcpkg-tool)
           C:\vcpkg\bootstrap-vcpkg.bat
 
-          # now install packages normally
-          C:\vcpkg\vcpkg.exe install openssl:x64-windows zlib:x64-windows sqlite3:x64-windows ecm:x64-windows
-          C:\vcpkg\vcpkg.exe install qtkeychain:x64-windows
-
+          C:\vcpkg\vcpkg.exe install openssl:x64-windows zlib:x64-windows sqlite3:x64-windows ecm:x64-windows qtkeychain-qt6:x64-windows
 
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
