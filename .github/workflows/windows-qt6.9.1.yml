@@ -17,9 +17,11 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install aqtinstall
 
-      - name: Install Qt 6.9.1 (core)
+      # Qt 6.9.1 + QtWebSockets (samo taj modul, bez qtbase/qtdeclarative...)
+      - name: Install Qt 6.9.1 (core + websockets)
         run: |
-          python -m aqt install-qt windows desktop 6.9.1 win64_msvc2022_64 -O C:\Qt
+          python -m aqt install-qt windows desktop 6.9.1 win64_msvc2022_64 -O C:\Qt ^
+            --modules qtwebsockets
 
       - name: Install Ninja
         shell: powershell
@@ -74,7 +76,12 @@ jobs:
             ecm:$triplet `
             kf6archive:$triplet `
             cmocka:$triplet `
-            qtkeychain-qt6:$triplet
+            --clean-after-build
+
+          # za svaki slučaj obriši Qt6 config iz vcpkg da ga CMake ne vidi
+          if (Test-Path "C:\vcpkg\installed\x64-windows\share\Qt6") {
+            Remove-Item -Recurse -Force "C:\vcpkg\installed\x64-windows\share\Qt6"
+          }
 
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
@@ -82,7 +89,7 @@ jobs:
           arch: x64
 
       #################################################
-      # CONFIGURE CMAKE
+      # CONFIGURE CMAKE – forsiramo Qt iz C:\Qt
       #################################################
       - name: Configure (CMake)
         shell: cmd
@@ -95,7 +102,13 @@ jobs:
             -DBUILD_UPDATER=OFF ^
             -DWITH_CRASHREPORTER=OFF ^
             -DBUILD_SHELL_INTEGRATION=OFF ^
+            -DBUILD_TESTING=OFF ^
+            -DWITH_FUSE=OFF ^
+            -DWITH_SYSTEMD=OFF ^
+            -DINSTALL_SYSTEMD=OFF ^
             -DQT_INSTALL_PREFIX=C:\Qt\6.9.1\msvc2022_64 ^
+            -DQt6_DIR=C:\Qt\6.9.1\msvc2022_64\lib\cmake\Qt6 ^
+            -DQt6WebSockets_DIR=C:\Qt\6.9.1\msvc2022_64\lib\cmake\Qt6WebSockets ^
             -DCMAKE_PREFIX_PATH="C:\Qt\6.9.1\msvc2022_64;C:\vcpkg\installed\x64-windows" ^
             -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake ^
             -DVCPKG_TARGET_TRIPLET=x64-windows ^
