@@ -56,7 +56,7 @@ jobs:
           echo "PKG_CONFIG_PATH=C:\fake-libp11\lib\pkgconfig" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       #################################################
-      # VCPKG – SAMO NON-QT ZAVISNOSTI
+      # VCPKG – non-Qt + QtKeychain
       #################################################
       - name: Setup vcpkg and install dependencies
         shell: powershell
@@ -76,8 +76,10 @@ jobs:
             ecm:$triplet `
             kf6archive:$triplet `
             cmocka:$triplet `
+            qtkeychain-qt6:$triplet `
             --clean-after-build
 
+          # i dalje brišemo Qt6 iz vcpkg da ne kvari naš Qt iz C:\Qt
           if (Test-Path "C:\vcpkg\installed\x64-windows\share\Qt6") {
             Remove-Item -Recurse -Force "C:\vcpkg\installed\x64-windows\share\Qt6"
           }
@@ -108,6 +110,136 @@ jobs:
             -DQT_INSTALL_PREFIX=C:\Qt\6.9.1\msvc2022_64 ^
             -DQt6_DIR=C:\Qt\6.9.1\msvc2022_64\lib\cmake\Qt6 ^
             -DQt6WebSockets_DIR=C:\Qt\6.9.1\msvc2022_64\lib\cmake\Qt6WebSockets ^
+            -DQt6Keychain_DIR=C:\vcpkg\installed\x64-windows\lib\cmake\Qt6Keychain ^
+            -DCMAKE_PREFIX_PATH="C:\Qt\6.9.1\msvc2022_64;C:\vcpkg\installed\x64-windows" ^
+            -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake ^
+            -DVCPKG_TARGET_TRIPLET=x64-windows ^
+            ..
+
+      - name: Build
+        shell: cmd
+        run: |
+          cd build
+          cmake --build . --config Release
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nextcloud-3klika-qt6.9.1
+          path: build/**/*.exe
+name: 3klika Nextcloud Windows (Qt 6.9.1)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      # aqtinstall + Qt 6.9.1 MSVC 2022
+      - name: Install aqtinstall
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install aqtinstall
+
+      # Qt 6.9.1 + QtWebSockets
+      - name: Install Qt 6.9.1 (core + websockets)
+        shell: powershell
+        run: |
+          python -m aqt install-qt windows desktop 6.9.1 win64_msvc2022_64 -O C:\Qt --modules qtwebsockets
+
+      - name: Install Ninja
+        shell: powershell
+        run: choco install ninja -y
+
+      - name: Install pkg-config
+        shell: powershell
+        run: choco install pkgconfiglite -y
+
+      #################################################
+      # FAKE libp11 – samo da se CMake ne dere
+      #################################################
+      - name: Create fake libp11
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force -Path "C:\fake-libp11\lib\pkgconfig" | Out-Null
+          Set-Content -Path "C:\fake-libp11\lib\pkgconfig\libp11.pc" -Value @"
+          prefix=C:/fake-libp11
+          exec_prefix=${prefix}
+          libdir=${prefix}/lib
+          includedir=${prefix}/include
+          Name: libp11
+          Description: Fake libp11 for Windows
+          Version: 1.0
+          Libs:
+          Cflags:
+          "@
+
+      - name: Add fake libp11 to PKG_CONFIG_PATH
+        shell: powershell
+        run: |
+          echo "PKG_CONFIG_PATH=C:\fake-libp11\lib\pkgconfig" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      #################################################
+      # VCPKG – non-Qt + QtKeychain
+      #################################################
+      - name: Setup vcpkg and install dependencies
+        shell: powershell
+        run: |
+          if (!(Test-Path "C:\vcpkg")) {
+            git clone https://github.com/microsoft/vcpkg C:\vcpkg
+          }
+
+          C:\vcpkg\bootstrap-vcpkg.bat
+
+          $triplet = "x64-windows"
+
+          C:\vcpkg\vcpkg.exe install `
+            openssl:$triplet `
+            zlib:$triplet `
+            sqlite3:$triplet `
+            ecm:$triplet `
+            kf6archive:$triplet `
+            cmocka:$triplet `
+            qtkeychain-qt6:$triplet `
+            --clean-after-build
+
+          # i dalje brišemo Qt6 iz vcpkg da ne kvari naš Qt iz C:\Qt
+          if (Test-Path "C:\vcpkg\installed\x64-windows\share\Qt6") {
+            Remove-Item -Recurse -Force "C:\vcpkg\installed\x64-windows\share\Qt6"
+          }
+
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      #################################################
+      # CONFIGURE CMAKE – forsiramo Qt iz C:\Qt
+      #################################################
+      - name: Configure (CMake)
+        shell: cmd
+        run: |
+          mkdir build
+          cd build
+          cmake -G "Ninja" ^
+            -DCMAKE_BUILD_TYPE=Release ^
+            -DCMAKE_DISABLE_FIND_PACKAGE_libp11=ON ^
+            -DBUILD_UPDATER=OFF ^
+            -DWITH_CRASHREPORTER=OFF ^
+            -DBUILD_SHELL_INTEGRATION=OFF ^
+            -DBUILD_TESTING=OFF ^
+            -DWITH_FUSE=OFF ^
+            -DWITH_SYSTEMD=OFF ^
+            -DINSTALL_SYSTEMD=OFF ^
+            -DQT_INSTALL_PREFIX=C:\Qt\6.9.1\msvc2022_64 ^
+            -DQt6_DIR=C:\Qt\6.9.1\msvc2022_64\lib\cmake\Qt6 ^
+            -DQt6WebSockets_DIR=C:\Qt\6.9.1\msvc2022_64\lib\cmake\Qt6WebSockets ^
+            -DQt6Keychain_DIR=C:\vcpkg\installed\x64-windows\lib\cmake\Qt6Keychain ^
             -DCMAKE_PREFIX_PATH="C:\Qt\6.9.1\msvc2022_64;C:\vcpkg\installed\x64-windows" ^
             -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake ^
             -DVCPKG_TARGET_TRIPLET=x64-windows ^
