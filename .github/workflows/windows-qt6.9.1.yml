@@ -17,11 +17,11 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install aqtinstall
 
-      # Qt 6.9.1 + QtWebSockets (samo taj modul, bez qtbase/qtdeclarative...)
+      # Qt 6.9.1 + QtWebSockets
       - name: Install Qt 6.9.1 (core + websockets)
+        shell: powershell
         run: |
-          python -m aqt install-qt windows desktop 6.9.1 win64_msvc2022_64 -O C:\Qt ^
-            --modules qtwebsockets
+          python -m aqt install-qt windows desktop 6.9.1 win64_msvc2022_64 -O C:\Qt --modules qtwebsockets
 
       - name: Install Ninja
         shell: powershell
@@ -78,7 +78,6 @@ jobs:
             cmocka:$triplet `
             --clean-after-build
 
-          # za svaki slučaj obriši Qt6 config iz vcpkg da ga CMake ne vidi
           if (Test-Path "C:\vcpkg\installed\x64-windows\share\Qt6") {
             Remove-Item -Recurse -Force "C:\vcpkg\installed\x64-windows\share\Qt6"
           }
